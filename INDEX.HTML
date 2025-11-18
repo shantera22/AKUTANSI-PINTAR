@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akuntansi & Manajemen</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Variabel Warna */
+        :root {
+            --primary: #5A67D8; /* Indigo */
+            --success: #10B981; /* Green 500 */
+            --danger: #EF4444;  /* Red 500 */
+            --bg-start: #3B82F6; 
+            --bg-end: #1D4ED8;   
+        }
+        
+        /* Background Utama */
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+            min-height: 100vh;
+            color: #E5E7EB;
+        }
+        
+        /* Efek Glassmorphism */
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Tombol Utama */
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary), #4C51BF);
+            color: white;
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(90, 103, 216, 0.4);
+        }
+        
+        .floating-btn {
+            position: fixed;
+            bottom: 90px; /* Di atas navbar bawah */
+            right: 30px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--success), #047857);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .input-field {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 10px;
+            color: #333;
+            padding: 14px;
+            transition: all 0.2s;
+        }
+
+        .page-transition {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+            margin: 0 4px;
+            padding: 8px 4px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .nav-btn .text-xs {
+            margin-top: 4px;
+        }
+
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div id="app" class="w-full max-w-md mx-auto">
+        <div id="login-page" class="page-transition">
+            <div class="glass-effect p-8 rounded-3xl text-center">
+                <h1 class="text-4xl font-extrabold text-white mb-2">SISTEM AKUTANSI SEDERHANA</h1>
+                <p class="text-white/70 mb-8">
+M CHAIRUN NAFI,
+MAYDA CHANDRA H,
+SYAFIQ FAZA,
+RIFKI HARYADI</p>
+                <input type="text" id="username" placeholder="Nama Perusahaan/Username" class="input-field w-full mb-4">
+                <input type="password" id="password" placeholder="Password" class="input-field w-full mb-4">
+                <button onclick="login()" class="btn-primary w-full mt-4"><i class="fas fa-sign-in-alt mr-2"></i>MASUK KE SISTEM</button>
+                <p class="text-white/70 text-sm mt-4">Belum punya akun? <a href="#" onclick="showRegister()" class="text-white font-semibold hover:text-primary">Daftar Sekarang</a></p>
+            </div>
+        </div>
+        
+        <div id="register-page" class="page-transition hidden">
+             <div class="glass-effect p-8 rounded-3xl text-center">
+                <h1 class="text-3xl font-bold text-white mb-2">Buat Akun Baru</h1>
+                <p class="text-white/70 mb-8">Daftar untuk mulai mengelola keuangan</p>
+                <input type="text" id="reg-username" placeholder="Nama Perusahaan/Username" class="input-field w-full mb-4">
+                <input type="password" id="reg-password" placeholder="Password" class="input-field w-full mb-4">
+                <input type="password" id="reg-confirm-password" placeholder="Konfirmasi Password" class="input-field w-full mb-6">
+                <button onclick="register()" class="btn-primary w-full"><i class="fas fa-user-plus mr-2"></i>DAFTAR</button>
+                <p class="text-white/70 text-sm mt-4">Sudah punya akun? <a href="#" onclick="showLogin()" class="text-white font-semibold hover:text-primary">Masuk</a></p>
+            </div>
+        </div>
+
+        <div id="dashboard-page" class="page-transition hidden pb-24">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Halo, <span id="welcome-user">Pengguna!</span></h1>
+                <button onclick="logout()" class="bg-white/10 p-3 rounded-full hover:bg-white/20 transition-colors">
+                    <i class="fas fa-sign-out-alt text-white/80"></i>
+                </button>
+            </div>
+
+            <div class="glass-effect p-6 mb-6 bg-gradient-to-br from-indigo-500/30 to-blue-600/30">
+                <p class="text-white/80 text-sm font-medium">Saldo Kas/Bank</p>
+                <p class="text-white font-extrabold text-4xl mt-1 tracking-wider" id="total-balance">Rp 0</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4 mb-6">
+                <div class="glass-effect p-4 text-center hover:bg-white/15 cursor-pointer" onclick="showInventory()">
+                    <i class="fas fa-warehouse text-2xl text-yellow-400 mb-2"></i>
+                    <p class="text-white font-semibold text-xl" id="inventory-value">Rp 0</p>
+                    <p class="text-white/70 text-xs">Total Nilai Inventaris</p>
+                </div>
+                <div class="glass-effect p-4 text-center hover:bg-white/15 cursor-pointer" onclick="showTaxManagement()">
+                    <i class="fas fa-calculator text-2xl text-red-400 mb-2"></i>
+                    <p class="text-white font-semibold text-xl" id="tax-due">Rp 0</p>
+                    <p class="text-white/70 text-xs">Kewajiban Pajak</p>
+                </div>
+            </div>
+
+            <div class="glass-effect p-6">
+                <h2 class="text-white font-semibold mb-4 text-lg">Aktivitas Jurnal Terbaru</h2>
+                <div id="recent-transactions" class="space-y-3"></div>
+            </div>
+
+            <button class="floating-btn" onclick="showAddTransaction()" title="Tambah Jurnal">
+                <i class="fas fa-plus"></i>
+            </button>
+        </div>
+        
+        <div id="transactions-page" class="page-transition hidden pb-24">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-white">1. Jurnal Umum</h1>
+                <button onclick="showDashboard()" class="bg-white/10 p-3 rounded-full hover:bg-white/20">
+                    <i class="fas fa-arrow-left text-white/80"></i>
+                </button>
+            </div>
+             <div class="glass-effect p-6">
+                <div id="all-transactions" class="space-y-4"></div>
+                <button onclick="downloadJournalPDF()" class="btn-primary w-full mt-4 p-3 text-sm flex items-center justify-center bg-blue-500/70">
+                    <i class="fas fa-file-pdf mr-2"></i>Unduh Jurnal (PDF)
+                </button>
+            </div>
+        </div>
+
+        <div id="reports-page" class="page-transition hidden pb-24">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-white">2. Laporan Keuangan</h1>
+                <button onclick="showDashboard()" class="bg-white/10 p-3 rounded-full hover:bg-white/20">
+                    <i class="fas fa-arrow-left text-white/80"></i>
+                </button>
+            </div>
+            <div class="glass-effect p-6 mb-6"><h2 class="text-xl font-bold text-white mb-4">Laba Rugi</h2><div id="income-statement"></div></div>
+            <div class="glass-effect p-6 mb-6"><h2 class="text-xl font-bold text-white mb-4">Neraca</h2><div id="balance-sheet"></div></div>
+        </div>
+        
+        <div id="inventory-page" class="page-transition hidden pb-24">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-white">3. Manajemen Inventaris</h1>
+                <button onclick="showDashboard()" class="bg-white/10 p-3 rounded-full hover:bg-white/20">
+                    <i class="fas fa-arrow-left text-white/80"></i>
+                </button>
+            </div>
+            <div class="glass-effect p-6 mb-6">
+                <h2 class="text-xl font-bold text-white mb-4">Daftar Stok Produk</h2>
+                <div id="inventory-list" class="space-y-4"></div>
+                 <button onclick="showModal('add-inventory-modal')" class="btn-primary w-full mt-4 p-3 text-sm">
+                    <i class="fas fa-plus-circle mr-2"></i>Tambah Produk
+                </button>
+            </div>
+        </div>
+        
+        <div id="tax-page" class="page-transition hidden pb-24">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-white">4. Manajemen Pajak</h1>
+                <button onclick="showDashboard()" class="bg-white/10 p-3 rounded-full hover:bg-white/20">
+                    <i class="fas fa-arrow-left text-white/80"></i>
+                </button>
+            </div>
+            <div class="glass-effect p-6 mb-6">
+                <h2 class="text-xl font-bold text-white mb-4">Ringkasan Pajak</h2>
+                <div id="tax-summary" class="space-y-4"></div>
+            </div>
+        </div>
+
+        <div id="settings-page" class="page-transition hidden pb-24">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-2xl font-bold text-white">Pengaturan Akun (COA)</h1>
+                <button onclick="showDashboard()" class="bg-white/10 p-3 rounded-full hover:bg-white/20">
+                    <i class="fas fa-arrow-left text-white/80"></i>
+                </button>
+            </div>
+             <div class="glass-effect p-6 mb-6">
+                <h2 class="text-white font-semibold text-lg mb-4">Daftar Akun Penuh (COA)</h2>
+                <div id="account-list" class="space-y-3"></div>
+                <button onclick="showModal('add-account-modal')" class="btn-primary w-full mt-6 p-3 text-sm">
+                    <i class="fas fa-plus-circle mr-2"></i>Tambah Akun Baru
+                </button>
+            </div>
+        </div>
+
+        <div id="nav-bar" class="glass-effect p-3 fixed bottom-0 left-0 right-0 mx-4 mb-4 rounded-2xl z-50 hidden">
+            <div class="flex justify-around text-center">
+                <button id="nav-dashboard" onclick="showDashboard()" class="nav-btn bg-indigo-600/50 text-white">
+                    <i class="fas fa-home text-lg"></i><span class="text-xs">Beranda</span>
+                </button>
+                <button id="nav-transactions" onclick="showTransactions()" class="nav-btn text-white/70 hover:bg-white/10">
+                    <i class="fas fa-pencil-alt text-lg"></i><span class="text-xs">Jurnal</span>
+                </button>
+                <button id="nav-reports" onclick="showReports()" class="nav-btn text-white/70 hover:bg-white/10">
+                    <i class="fas fa-chart-line text-lg"></i><span class="text-xs">Laporan</span>
+                </button>
+                <button id="nav-inventory" onclick="showInventory()" class="nav-btn text-white/70 hover:bg-white/10">
+                    <i class="fas fa-boxes text-lg"></i><span class="text-xs">Inventaris</span>
+                </button>
+                <button id="nav-tax" onclick="showTaxManagement()" class="nav-btn text-white/70 hover:bg-white/10">
+                    <i class="fas fa-file-invoice-dollar text-lg"></i><span class="text-xs">Pajak</span>
+                </button>
+                 <button id="nav-settings" onclick="showSettings()" class="nav-btn text-white/70 hover:bg-white/10">
+                    <i class="fas fa-cog text-lg"></i><span class="text-xs">Akun</span>
+                </button>
+            </div>
+        </div>
+
+
+        <div id="add-transaction-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
+            <div class="glass-effect p-6 rounded-3xl w-full max-w-md animate-in slide-in-from-top duration-500">
+                <h2 class="text-white font-extrabold text-2xl mb-4 text-center border-b border-white/20 pb-2">Buat Jurnal Baru</h2>
+                
+                <div class="space-y-4">
+                    <input type="date" id="transaction-date" class="input-field w-full font-medium">
+                
+                    <input type="text" id="transaction-description" placeholder="Keterangan Transaksi" class="input-field w-full">
+
+                    <input type="number" id="transaction-amount" placeholder="Nilai Transaksi (Debit/Kredit)" class="input-field w-full text-center font-bold text-lg text-primary">
+                </div>
+                
+                <div class="mt-6 space-y-4">
+                    <div class="bg-indigo-700/30 p-4 rounded-xl border border-indigo-500/50 shadow-lg">
+                        <h3 class="text-white font-bold mb-3 flex justify-between items-center"><span>DEBIT</span><i class="fas fa-long-arrow-alt-up text-green-400"></i></h3>
+                        <select id="debit-account" class="input-field w-full">
+                            <option value="">Pilih Akun Debit</option>
+                        </select>
+                    </div>
+
+                    <div class="bg-red-700/30 p-4 rounded-xl border border-red-500/50 shadow-lg">
+                        <h3 class="text-white font-bold mb-3 flex justify-between items-center"><span>KREDIT</span><i class="fas fa-long-arrow-alt-down text-red-400"></i></h3>
+                        <select id="credit-account" class="input-field w-full">
+                            <option value="">Pilih Akun Kredit</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="flex space-x-4 mt-6">
+                    <button onclick="hideModal('add-transaction-modal')" class="flex-1 p-3 rounded-xl bg-white/20 text-white hover:bg-white/30 transition-colors">Batal</button>
+                    <button onclick="addJournalEntry()" class="flex-1 btn-primary p-3">
+                        <i class="fas fa-save mr-2"></i>SIMPAN JURNAL
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="add-account-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
+             <div class="glass-effect p-6 rounded-3xl w-full max-w-md animate-in slide-in-from-top duration-500">
+                <h2 class="text-white font-semibold text-xl mb-4">Tambah Akun Baru</h2>
+                
+                <div class="mb-4">
+                    <input type="text" id="new-account-id" placeholder="ID Akun (cth: 1400)" class="input-field w-full">
+                </div>
+                
+                <div class="mb-4">
+                    <input type="text" id="new-account-name" placeholder="Nama Akun" class="input-field w-full">
+                </div>
+                
+                <div class="mb-4">
+                    <select id="new-account-type" class="input-field w-full">
+                        <option value="">Pilih Kategori Utama</option>
+                        <option value="asset">1xxx - Aset (Harta)</option>
+                        <option value="liability">2xxx - Liabilitas (Utang)</option>
+                        <option value="equity">3xxx - Ekuitas (Modal)</option>
+                        <option value="income">4xxx - Pendapatan</option>
+                        <option value="cogs">5xxx - Harga Pokok Penjualan (HPP)</option>
+                        <option value="expense">6xxx - Beban (Operasional)</option>
+                        <option value="other_income">7xxx - Pendapatan Lain-lain</option>
+                        <option value="other_expense">8xxx - Beban Lain-lain</option>
+                    </select>
+                </div>
+                
+                <div class="flex space-x-4">
+                    <button onclick="hideModal('add-account-modal')" class="flex-1 p-3 rounded-xl bg-white/20 text-white hover:bg-white/30">Batal</button>
+                    <button onclick="addAccount()" class="flex-1 btn-primary p-3">Simpan Akun</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="add-inventory-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center p-4 hidden z-50">
+            <div class="glass-effect p-6 rounded-3xl w-full max-w-md animate-in slide-in-from-top duration-500">
+                <h2 class="text-white font-semibold text-xl mb-4">Tambah Produk Inventaris</h2>
+                <input type="text" id="inv-name" placeholder="Nama Produk" class="input-field w-full mb-4">
+                <input type="number" id="inv-cost" placeholder="Harga Pokok (Cost)" class="input-field w-full mb-4">
+                <input type="number" id="inv-qty" placeholder="Jumlah Stok Awal" class="input-field w-full mb-4">
+                <button onclick="addInventoryItem()" class="btn-primary w-full p-3">Simpan Produk</button>
+                <button onclick="hideModal('add-inventory-modal')" class="w-full mt-4 p-3 rounded-xl bg-white/20 text-white hover:bg-white/30">Batal</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Global Variables
+        let currentUser = null;
+        const { jsPDF } = window.jspdf;
+
+        // COA Penuh (Initial Default Accounts)
+        const defaultAccounts = [
+            { id: '1000', name: 'Kas/Bank', type: 'asset' },
+            { id: '1100', name: 'Piutang Usaha', type: 'asset' },
+            { id: '1200', name: 'Persediaan Barang Dagang', type: 'asset' },
+            { id: '2100', name: 'Utang Usaha', type: 'liability' },
+            { id: '2500', name: 'PPN Keluaran', type: 'liability' },
+            { id: '3000', name: 'Modal Pemilik', type: 'equity' },
+            { id: '4000', name: 'Pendapatan Penjualan', type: 'income' },
+            { id: '5000', name: 'Harga Pokok Penjualan', type: 'cogs' },
+            { id: '6000', name: 'Beban Gaji & Upah', type: 'expense' },
+        ];
+
+
+        // --- FUNGSI UTAMA APLIKASI ---
+
+        function initApp() {
+            checkAuth();
+            setCurrentDate();
+        }
+
+        function checkAuth() {
+            const user = localStorage.getItem('currentUser');
+            if (user) {
+                currentUser = JSON.parse(user);
+                loadUserData();
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        }
+
+        function loadUserData() {
+            // Memastikan data akun dan inventaris ada untuk user yang login
+            getAccounts(); 
+            getInventory();
+            document.getElementById('welcome-user').textContent = currentUser.username;
+        }
+
+        function setCurrentDate() {
+            document.getElementById('transaction-date').value = new Date().toISOString().split('T')[0];
+        }
+
+        // --- AUTENTIKASI ---
+
+        function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) { alert('Harap isi username dan password!'); return; }
+            
+            const users = JSON.parse(localStorage.getItem('users') || '[]');
+            const user = users.find(u => u.username === username && u.password === password);
+            
+            if (user) {
+                currentUser = user;
+                localStorage.setItem('currentUser', JSON.stringify(user));
+                loadUserData();
+                showDashboard();
+            } else { alert('Username atau password salah!'); }
+        }
+
+        function register() {
+            const username = document.getElementById('reg-username').value;
+            const password = document.getElementById('reg-password').value;
+            const confirmPassword = document.getElementById('reg-confirm-password').value;
+            
+            if (!username || !password || !confirmPassword) { alert('Semua field harus diisi!'); return; }
+            if (password !== confirmPassword) { alert('Password tidak cocok!'); return; }
+            
+            let users = JSON.parse(localStorage.getItem('users') || '[]');
+            if (users.some(u => u.username === username)) { alert('Username sudah digunakan!'); return; }
+            
+            const newUser = { username, password };
+            users.push(newUser);
+            localStorage.setItem('users', JSON.stringify(users));
+            
+            alert('Registrasi berhasil! Silakan login.');
+            showLogin();
+        }
+
+        function logout() {
+            if (confirm('Anda yakin ingin keluar?')) {
+                localStorage.removeItem('currentUser');
+                currentUser = null;
+                document.getElementById('nav-bar').classList.add('hidden');
+                showLogin();
+            }
+        }
+
+        // --- NAVIGASI & TAMPILAN ---
+
+        function showPage(pageId) {
+            document.querySelectorAll('[id$="-page"]').forEach(page => page.classList.add('hidden'));
+            
+            const targetPage = document.getElementById(pageId);
+            if(targetPage) {
+                targetPage.classList.remove('hidden');
+            } else {
+                console.error(Page ID "${pageId}" not found.);
+                return;
+            }
+
+            if (pageId === 'login-page' || pageId === 'register-page') {
+                document.getElementById('nav-bar').classList.add('hidden');
+            } else {
+                document.getElementById('nav-bar').classList.remove('hidden');
+                updateNav(pageId);
+            }
+        }
+
+        function updateNav(currentPageId) {
+            const navButtons = document.querySelectorAll('.nav-btn');
+            navButtons.forEach(btn => {
+                btn.classList.remove('bg-indigo-600/50', 'text-white');
+                btn.classList.add('text-white/70', 'hover:bg-white/10');
+            });
+            
+            const buttonId = nav-${currentPageId.replace('-page', '')};
+            const activeBtn = document.getElementById(buttonId);
+            
+            if (activeBtn) {
+                activeBtn.classList.remove('text-white/70', 'hover:bg-white/10');
+                activeBtn.classList.add('bg-indigo-600/50', 'text-white');
+            }
+        }
+
+        function showLogin() { showPage('login-page'); }
+        function showRegister() { showPage('register-page'); }
+        function showDashboard() { showPage('dashboard-page'); loadDashboardData(); }
+        function showTransactions() { showPage('transactions-page'); loadAllTransactions(); }
+        function showReports() { showPage('reports-page'); generateReports(); }
+        function showSettings() { showPage('settings-page'); loadAccountList(); }
+        function showInventory() { showPage('inventory-page'); loadInventoryList(); }
+        function showTaxManagement() { showPage('tax-page'); loadTaxSummary(); }
+        function showAddTransaction() { populateDebitCreditAccounts(); showModal('add-transaction-modal'); }
+
+        function showModal(modalId) {
+            document.getElementById(modalId).classList.remove('hidden');
+        }
+
+        function hideModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // --- COA MANAGEMENT ---
+
+        function getAccounts() {
+            let accounts = JSON.parse(localStorage.getItem(accounts_${currentUser.username}) || '[]');
+            if (accounts.length === 0) {
+                accounts = defaultAccounts.map(acc => ({...acc, id: acc.id}));
+                saveAccounts(accounts);
+            }
+            return accounts;
+        }
+
+        function saveAccounts(accounts) {
+            localStorage.setItem(accounts_${currentUser.username}, JSON.stringify(accounts));
+        }
+
+        function addAccount() {
+            const id = document.getElementById('new-account-id').value;
+            const name = document.getElementById('new-account-name').value;
+            const type = document.getElementById('new-account-type').value;
+
+            if (!id || !name || !type) { alert('Semua field harus diisi!'); return; }
+            if (isNaN(parseInt(id))) { alert('ID Akun harus berupa angka!'); return; }
+
+            let accounts = getAccounts();
+            if (accounts.some(acc => acc.id === id)) { alert('ID Akun sudah ada!'); return; }
+
+            const newAccount = { id: id, name: name, type: type };
+            accounts.push(newAccount);
+            saveAccounts(accounts);
+            
+            hideModal('add-account-modal');
+            loadAccountList();
+            populateDebitCreditAccounts();
+            alert(Akun ${id} - ${name} berhasil ditambahkan!);
+            // Reset fields
+            document.getElementById('new-account-id').value = '';
+            document.getElementById('new-account-name').value = '';
+            document.getElementById('new-account-type').value = '';
+        }
+
+        function loadAccountList() {
+            const accounts = getAccounts().sort((a, b) => parseInt(a.id) - parseInt(b.id));
+            const container = document.getElementById('account-list');
+            
+            container.innerHTML = accounts.map(acc => `
+                <div class="flex justify-between items-center p-3 bg-white/10 rounded-xl hover:bg-white/15 transition-all">
+                    <div>
+                        <p class="text-white font-semibold">${acc.id} - ${acc.name}</p>
+                        <p class="text-white/70 text-sm capitalize">${acc.type.replace('_', ' ')}</p>
+                    </div>
+                    <i class="fas fa-code-branch text-indigo-400"></i>
+                </div>
+            `).join('');
+        }
+
+        function populateDebitCreditAccounts() {
+            const debitSelect = document.getElementById('debit-account');
+            const creditSelect = document.getElementById('credit-account');
+            const accounts = getAccounts().sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+            // Simpan pilihan yang sudah ada (jika ada)
+            const selectedDebit = debitSelect.value;
+            const selectedCredit = creditSelect.value;
+
+            debitSelect.innerHTML = '<option value="">Pilih Akun Debit</option>';
+            creditSelect.innerHTML = '<option value="">Pilih Akun Kredit</option>';
+
+            accounts.forEach(acc => {
+                const optionText = ${acc.id} - ${acc.name};
+                debitSelect.innerHTML += <option value="${acc.id}">${optionText}</option>;
+                creditSelect.innerHTML += <option value="${acc.id}">${optionText}</option>;
+            });
+            
+            // Kembalikan pilihan
+            debitSelect.value = selectedDebit;
+            creditSelect.value = selectedCredit;
+        }
+        
+        // --- TRANSAKSI (JURNAL) ---
+
+        function getTransactions() {
+            return JSON.parse(localStorage.getItem(transactions_${currentUser.username}) || '[]');
+        }
+
+        function saveTransactions(transactions) {
+            localStorage.setItem(transactions_${currentUser.username}, JSON.stringify(transactions));
+        }
+
+        function getNextTransactionNumber(transactions) {
+            const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
+            const prefix = JNL-${today}-;
+            const transactionsToday = transactions.filter(t => t.transNo && t.transNo.startsWith(prefix));
+            
+            let lastNumber = 0;
+            if (transactionsToday.length > 0) {
+                const lastTransNo = transactionsToday[transactionsToday.length - 1].transNo;
+                lastNumber = parseInt(lastTransNo.split('-').pop());
+            }
+            return ${prefix}${String(lastNumber + 1).padStart(3, '0')};
+        }
+        
+        function addJournalEntry() {
+            const amount = parseFloat(document.getElementById('transaction-amount').value);
+            const description = document.getElementById('transaction-description').value;
+            const debitAccountId = document.getElementById('debit-account').value;
+            const creditAccountId = document.getElementById('credit-account').value;
+            const date = document.getElementById('transaction-date').value;
+            
+            if (!amount || !description || !debitAccountId || !creditAccountId || !date || amount <= 0) {
+                alert('Data jurnal tidak lengkap atau tidak valid. Pastikan jumlah > 0 dan akun Debit/Kredit berbeda.');
+                return;
+            }
+            if (debitAccountId === creditAccountId) {
+                alert('Akun Debit dan Kredit tidak boleh sama!');
+                return;
+            }
+            
+            const transactions = getTransactions();
+            const transNo = getNextTransactionNumber(transactions);
+            
+            const journalEntry = {
+                id: Date.now(),
+                transNo: transNo,
+                amount: amount,
+                description: description,
+                debitId: debitAccountId,
+                creditId: creditAccountId,
+                date: date,
+                createdAt: new Date().toISOString()
+            };
+            
+            transactions.push(journalEntry);
+            saveTransactions(transactions);
+            
+            hideModal('add-transaction-modal');
+            loadDashboardData();
+            // Reset input fields
+            document.getElementById('transaction-amount').value = '';
+            document.getElementById('transaction-description').value = '';
+            document.getElementById('debit-account').value = '';
+            document.getElementById('credit-account').value = '';
+            setCurrentDate();
+            alert('Jurnal berhasil dicatat!');
+        }
+        
+        // --- DASHBOARD & JURNAL UMUM VIEW ---
+
+        function getAccountBalances() {
+            const transactions = getTransactions();
+            const accounts = getAccounts();
+            const balances = {};
+
+            accounts.forEach(acc => balances[acc.id] = 0);
+            transactions.forEach(entry => {
+                const amount = entry.amount;
+                // Saldo normal Debit: Aset, Beban, Prive (menambah saldo positif)
+                // Saldo normal Kredit: Liabilitas, Ekuitas, Pendapatan (mengurangi saldo positif)
+                balances[entry.debitId] = (balances[entry.debitId] || 0) + amount;
+                balances[entry.creditId] = (balances[entry.creditId] || 0) - amount;
+            });
+            return balances;
+        }
+
+        function loadDashboardData() {
+            const balances = getAccountBalances();
+            const totalBalance = balances['1000'] || 0; // Saldo Kas/Bank
+            
+            document.getElementById('total-balance').textContent = formatCurrency(totalBalance);
+            loadRecentTransactions(getTransactions());
+            
+            // Memuat simulasi data inventaris dan pajak
+            document.getElementById('inventory-value').textContent = formatCurrency(getInventoryValue());
+            document.getElementById('tax-due').textContent = formatCurrency(calculateTaxDue());
+        }
+        
+        function loadRecentTransactions(transactions) {
+             const container = document.getElementById('recent-transactions');
+             const accounts = getAccounts();
+             const recent = transactions.slice(-5).reverse();
+             
+             if (recent.length === 0) {
+                 container.innerHTML = <div class="text-center py-6 text-white/50"><i class="fas fa-hourglass-start text-3xl mb-2"></i><p>Belum ada aktivitas jurnal.</p></div>;
+                 return;
+             }
+             
+             container.innerHTML = recent.map(entry => {
+                const accountDebet = accounts.find(a => a.id === entry.debitId)?.name || 'N/A';
+                const accountCredit = accounts.find(a => a.id === entry.creditId)?.name || 'N/A';
+                 return `
+                     <div class="p-3 bg-white/10 rounded-xl flex justify-between items-center">
+                         <div>
+                             <p class="text-white font-semibold">${entry.description}</p>
+                             <p class="text-white/70 text-xs">${entry.transNo} | Db: ${entry.debitId} / Kr: ${entry.creditId}</p>
+                         </div>
+                         <p class="text-white font-bold text-sm ${entry.debitId === '1000' ? 'text-green-400' : 'text-red-400'}">${formatCurrency(entry.amount)}</p>
+                     </div>
+                 `;
+             }).join('');
+         }
+         
+         function loadAllTransactions() {
+             const transactions = getTransactions();
+             const container = document.getElementById('all-transactions');
+             const accounts = getAccounts();
+             
+             if (transactions.length === 0) {
+                 container.innerHTML = <div class="text-center py-8 text-white/50"><i class="fas fa-file-alt text-3xl mb-2"></i><p>Tidak ada jurnal yang dicatat.</p></div>;
+                 return;
+             }
+             
+             const grouped = transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).reduce((groups, transaction) => {
+                 const date = transaction.date;
+                 if (!groups[date]) groups[date] = [];
+                 groups[date].push(transaction);
+                 return groups;
+             }, {});
+             
+             container.innerHTML = Object.entries(grouped).map(([date, dateTransactions]) => `
+                 <div class="mb-4">
+                     <h3 class="text-white/80 font-bold text-md mb-2">${formatDate(date)}</h3>
+                     ${dateTransactions.map(entry => `
+                         <div class="p-4 bg-white/5 rounded-xl mb-3 hover:bg-white/10 transition-all">
+                             <p class="text-white font-semibold mb-1">${entry.description}</p>
+                             <p class="text-white/50 text-xs mb-2">No. Transaksi: ${entry.transNo}</p>
+                             <div class="flex justify-between items-center text-sm ml-4 text-white">
+                                 <p><span class="font-medium text-green-400">Db:</span> ${entry.debitId} - ${accounts.find(a => a.id === entry.debitId)?.name || 'N/A'}</p>
+                                 <p class="font-bold">${formatCurrency(entry.amount)}</p>
+                             </div>
+                             <div class="flex justify-between items-center text-sm ml-8 text-white/70">
+                                 <p><span class="font-medium text-red-400">Kr:</span> ${entry.creditId} - ${accounts.find(a => a.id === entry.creditId)?.name || 'N/A'}</p>
+                                 <p class="font-bold">${formatCurrency(entry.amount)}</p>
+                             </div>
+                         </div>
+                     `).join('')}
+                 </div>
+             `).join('');
+         }
+
+        // --- LAPORAN KEUANGAN ---
+        
+        function generateReports() {
+            const balances = getAccountBalances();
+            const accounts = getAccounts();
+
+            const getBalanceByType = (type) => accounts
+                .filter(acc => acc.type === type)
+                .reduce((sum, acc) => sum + (balances[acc.id] || 0), 0);
+
+            // Laba Rugi
+            const totalIncome = Math.abs(getBalanceByType('income'));
+            const totalCogs = Math.abs(getBalanceByType('cogs'));
+            const totalExpense = Math.abs(getBalanceByType('expense'));
+            const totalOtherIncome = Math.abs(getBalanceByType('other_income'));
+            const totalOtherExpense = Math.abs(getBalanceByType('other_expense'));
+            
+            const grossProfit = totalIncome - totalCogs;
+            const operatingIncome = grossProfit - totalExpense;
+            const netIncome = operatingIncome + totalOtherIncome - totalOtherExpense;
+
+            // Neraca
+            const totalAsset = getBalanceByType('asset');
+            const totalLiability = Math.abs(getBalanceByType('liability'));
+            const initialEquity = Math.abs(balances['3000'] || 0); // Modal Awal
+            
+            const finalEquity = initialEquity + netIncome;
+            const totalLiabilityEquity = totalLiability + finalEquity;
+
+            renderIncomeStatement(totalIncome, totalCogs, totalExpense, totalOtherIncome, totalOtherExpense, grossProfit, operatingIncome, netIncome);
+            renderBalanceSheet(totalAsset, totalLiability, initialEquity, netIncome, totalLiabilityEquity);
+        }
+
+        function renderIncomeStatement(totalIncome, totalCogs, totalExpense, totalOtherIncome, totalOtherExpense, grossProfit, operatingIncome, netIncome) {
+             document.getElementById('income-statement').innerHTML = `
+                <div class="space-y-2">
+                    <p class="flex justify-between"><span>Total Pendapatan (4xxx)</span><span class="font-bold text-green-400">${formatCurrency(totalIncome)}</span></p>
+                    <p class="flex justify-between"><span>Harga Pokok Penjualan (5xxx)</span><span class="font-bold text-red-400">(${formatCurrency(totalCogs)})</span></p>
+                    <div class="border-t border-white/50 pt-2 font-bold text-lg flex justify-between"><span>LABA KOTOR</span><span class="${grossProfit >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(grossProfit)}</span></div>
+                    
+                    <p class="mt-4 flex justify-between"><span>Total Beban Operasional (6xxx)</span><span class="font-bold text-red-400">(${formatCurrency(totalExpense)})</span></p>
+                    <div class="border-t border-white/50 pt-2 font-bold text-lg flex justify-between"><span>LABA OPERASI</span><span class="${operatingIncome >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(operatingIncome)}</span></div>
+
+                    <p class="mt-4 flex justify-between text-sm"><span>Pend. Lain-lain (7xxx)</span><span class="text-green-400">${formatCurrency(totalOtherIncome)}</span></p>
+                    <p class="flex justify-between text-sm"><span>Beban Lain-lain (8xxx)</span><span class="text-red-400">(${formatCurrency(totalOtherExpense)})</span></p>
+                    
+                    <div class="border-t-2 border-white pt-4 font-extrabold text-xl flex justify-between"><span>LABA BERSIH</span><span class="${netIncome >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(netIncome)}</span></div>
+                </div>
+            `;
+        }
+
+        function renderBalanceSheet(totalAsset, totalLiability, initialEquity, netIncome, totalLiabilityEquity) {
+             document.getElementById('balance-sheet').innerHTML = `
+                <div class="space-y-2">
+                    <h3 class="font-bold text-white text-lg mt-4">Aset (1xxx)</h3>
+                    <div class="border-t border-white/50 pt-2 font-bold text-lg flex justify-between"><span>TOTAL ASET</span><span class="text-blue-400">${formatCurrency(totalAsset)}</span></div>
+                    
+                    <h3 class="font-bold text-white text-lg mt-4">Liabilitas (2xxx)</h3>
+                    <p class="flex justify-between"><span>Total Utang</span><span class="font-semibold">${formatCurrency(totalLiability)}</span></p>
+                    
+                    <h3 class="font-bold text-white text-lg mt-4">Ekuitas (3xxx)</h3>
+                    <p class="flex justify-between"><span>Modal Awal</span><span class="font-semibold">${formatCurrency(initialEquity)}</span></p>
+                    <p class="flex justify-between"><span>Laba Bersih Tahun Berjalan</span><span class="font-semibold ${netIncome >= 0 ? 'text-green-400' : 'text-red-400'}">${formatCurrency(netIncome)}</span></p>
+                    
+                    <div class="border-t-2 border-white pt-4 font-extrabold text-xl flex justify-between"><span>TOTAL LIABILITAS & EKUITAS</span><span class="text-blue-400">${formatCurrency(totalLiabilityEquity)}</span></div>
+                    <p class="text-center text-xs mt-4 text-white/50">Neraca Seimbang: ${Math.abs(totalAsset - totalLiabilityEquity) < 1 ? 'YA' : 'TIDAK'} (Selisih: ${formatCurrency(totalAsset - totalLiabilityEquity)})</p>
+                </div>
+            `;
+        }
+
+        // --- MANAJEMEN INVENTARIS ---
+        
+        function getInventory() {
+            return JSON.parse(localStorage.getItem(inventory_${currentUser.username}) || '[]');
+        }
+
+        function saveInventory(inventory) {
+            localStorage.setItem(inventory_${currentUser.username}, JSON.stringify(inventory));
+        }
+
+        function getInventoryValue() {
+             const inventory = getInventory();
+             return inventory.reduce((total, item) => total + (item.cost * item.qty), 0);
+        }
+        
+        function addInventoryItem() {
+            const name = document.getElementById('inv-name').value;
+            const cost = parseFloat(document.getElementById('inv-cost').value);
+            const qty = parseInt(document.getElementById('inv-qty').value);
+
+            if (!name || isNaN(cost) || isNaN(qty) || cost <= 0 || qty < 0) { 
+                alert('Data inventaris tidak valid. Pastikan Harga Pokok > 0.'); 
+                return; 
+            }
+            
+            const inventory = getInventory();
+            const newItem = { id: Date.now(), name, cost, qty };
+            inventory.push(newItem);
+            saveInventory(inventory);
+            
+            hideModal('add-inventory-modal');
+            loadInventoryList();
+            loadDashboardData();
+            // Reset fields
+            document.getElementById('inv-name').value = '';
+            document.getElementById('inv-cost').value = '';
+            document.getElementById('inv-qty').value = '';
+
+            alert('Produk inventaris berhasil ditambahkan.');
+        }
+
+        function loadInventoryList() {
+            const inventory = getInventory();
+            const container = document.getElementById('inventory-list');
+            
+            if (inventory.length === 0) {
+                 container.innerHTML = <p class="text-white/50 text-center text-sm">Belum ada produk dalam inventaris. <br> Nilai Inventaris: ${formatCurrency(0)}</p>;
+                 return;
+            }
+            
+            container.innerHTML = inventory.map(item => `
+                <div class="p-4 bg-white/10 rounded-xl flex justify-between items-center hover:bg-white/15">
+                    <div>
+                        <p class="text-white font-semibold">${item.name}</p>
+                        <p class="text-white/70 text-xs">Stok: ${item.qty} | HPP: ${formatCurrency(item.cost)}</p>
+                    </div>
+                    <p class="text-yellow-400 font-bold">${formatCurrency(item.cost * item.qty)}</p>
+                </div>
+            `).join('');
+            
+            container.innerHTML += <p class="mt-4 text-white/80 font-bold">Total Nilai Inventaris: ${formatCurrency(getInventoryValue())}</p>;
+        }
+
+        // --- MANAJEMEN PAJAK (SIMULASI) ---
+
+        function calculateTaxDue() {
+            // SIMULASI: Menghitung PPN Keluaran (asumsi 11% dari Pendapatan Penjualan)
+            const balances = getAccountBalances();
+            const totalIncome = Math.abs(balances['4000'] || 0); 
+            const ppnRate = 0.11; 
+            
+            const ppnKeluaran = totalIncome * ppnRate;
+            
+            // SIMULASI Sederhana: Kewajiban Pajak adalah PPN Keluaran
+            return ppnKeluaran; 
+        }
+
+        function loadTaxSummary() {
+            const balances = getAccountBalances();
+            const totalSales = Math.abs(balances['4000'] || 0);
+            const ppnKeluaran = calculateTaxDue();
+            
+            const container = document.getElementById('tax-summary');
+            container.innerHTML = `
+                <p class="text-white font-semibold">Total Penjualan (DPP): ${formatCurrency(totalSales)}</p>
+                <p class="text-white font-semibold text-green-400">PPN Keluaran (11%): ${formatCurrency(ppnKeluaran)}</p>
+                <div class="border-t border-white/50 pt-3 mt-3">
+                    <p class="text-white font-extrabold text-xl text-red-400">Kewajiban Pajak Terutang: ${formatCurrency(ppnKeluaran)}</p>
+                </div>
+                <p class="text-white/70 text-xs mt-4">Angka ini adalah simulasi.</p>
+            `;
+        }
+
+
+        // --- HELPER FUNCTIONS ---
+        
+        function formatCurrency(amount) {
+            return 'Rp ' + Math.abs(amount).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString + 'T00:00:00');
+            return date.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        }
+        
+        function downloadJournalPDF() {
+            alert("Fitur Unduh PDF (hanya simulasi) telah dipanggil.");
+            // Implementasi JS-PDF yang kompleks dihapus untuk fokus pada fungsi inti anti-error.
+        }
+
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
