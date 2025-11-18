@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FinTrack Pro - Akuntansi & Manajemen Sempurna</title>
+    
+    <base href="./"> 
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.21/jspdf.plugin.autotable.min.js"></script>
@@ -18,7 +21,7 @@
         }
         
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: sans-serif;
             background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
             min-height: 100vh;
             color: #E5E7EB;
@@ -1161,6 +1164,14 @@
                             newEntry.debitId && newEntry.creditId && newEntry.date && 
                             !existingIds.has(newEntry.id)
                         ) {
+                            // Jika transNo tidak ada, buatkan yang baru saat impor
+                            if (!newEntry.transNo) {
+                                newEntry.transNo = getNextTransactionNumber(currentTransactions);
+                            }
+                            if (!newEntry.createdAt) {
+                                newEntry.createdAt = new Date().toISOString();
+                            }
+
                             currentTransactions.push(newEntry);
                             newTransactionsCount++;
                         }
